@@ -1,7 +1,7 @@
 import { nanoid } from '@/lib/utils'
 import { Chat } from '@/components/chat'
 import { AI } from '@/lib/chat/actions'
-import { auth } from '@/auth'
+import { auth } from '@/app/auth'
 import { Session } from '@/lib/types'
 import { getMissingKeys } from '../actions'
 

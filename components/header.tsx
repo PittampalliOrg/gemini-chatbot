@@ -3,7 +3,7 @@ import * as React from 'react'
 import Link from 'next/link'
 
 import { cn } from '@/lib/utils'
-import { auth } from '@/auth'
+import { auth } from '@/app/auth'
 import { Button, buttonVariants } from '@/components/ui/button'
 import {
   IconGitHub,
@@ -16,6 +16,7 @@ import { SidebarMobile } from './sidebar-mobile'
 import { SidebarToggle } from './sidebar-toggle'
 import { ChatHistory } from './chat-history'
 import { Session } from '@/lib/types'
+import AuthButton from '@/app/AuthButton.server'
 
 async function UserOrLogin() {
   const session = (await auth()) as Session
@@ -38,9 +39,10 @@ async function UserOrLogin() {
         {session?.user ? (
           <UserMenu user={session.user} />
         ) : (
-          <Button variant="link" asChild className="-ml-2">
-            <Link href="/login">Login</Link>
-          </Button>
+          <AuthButton />
+          // <Button variant="link" asChild className="-ml-2">
+          //   <Link href="/login">Login</Link>
+          // </Button>
         )}
       </div>
     </>

@@ -1,6 +1,6 @@
 'use server'
 
-import { signIn } from '@/auth'
+import { signIn } from '@/app/auth'
 import { User } from '@/lib/types'
 import { AuthError } from 'next-auth'
 import { z } from 'zod'
