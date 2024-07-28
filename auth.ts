@@ -1,11 +1,25 @@
-import NextAuth, { User, NextAuthConfig } from "next-auth"
+import { authConfig } from './auth.config'
+import { getStringFromBuffer } from './lib/utils'
+import { getUser } from './app/login/actions'
 import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id"
- 
+
 export const BASE_PATH = '/api/auth';
 
 export const graphqlConfig = {
   graphqlEndpoint: "https://api.fabric.microsoft.com/v1/workspaces/8986808f-6c68-4a91-b3c4-1a38bfa8d7e1/graphqlapis/0c5175ba-3eb0-4e16-ba31-120722369a4b/graphql"
 };
+
+import NextAuth, { type DefaultSession } from "next-auth"
+
+declare module "next-auth" {
+  interface Session {
+    accessToken?: string
+    user: {
+      /** The user's postal address. */
+      address: string
+    } & DefaultSession["user"]
+  }
+}
 
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -26,11 +40,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async session({ session, token, user }) {
       return {
         ...session,
-        accessToken: token.accessToken as string
+        accessToken: token.accessToken as string,
+        user: {
+          id: user.id as string,
+          name: user.name as string,
+      }
       }
     }
   },
-  secret: process.env.NEXTAUTH_SECRET as string,
+  secret: process.env.AUTH_SECRET as string,
 });
 
 export const loginRequest = {

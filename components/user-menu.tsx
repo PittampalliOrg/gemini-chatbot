@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
-import { signOut } from '@/app/auth'
+import { signOut } from '@/auth'
 
 export interface UserMenuProps {
   user: Session['user']

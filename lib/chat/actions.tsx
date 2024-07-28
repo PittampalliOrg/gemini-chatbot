@@ -18,7 +18,7 @@ import { nanoid, sleep } from '@/lib/utils'
 import { saveChat } from '@/app/actions'
 import { SpinnerMessage, UserMessage } from '@/components/stocks/message'
 import { Chat } from '../types'
-import { auth } from '@/app/auth'
+import { auth } from '@/auth'
 import { FlightStatus } from '@/components/flights/flight-status'
 import { SelectSeats } from '@/components/flights/select-seats'
 import { ListFlights } from '@/components/flights/list-flights'
@@ -27,6 +27,7 @@ import { PurchaseTickets } from '@/components/flights/purchase-ticket'
 import { CheckIcon, SpinnerIcon } from '@/components/ui/icons'
 import { format } from 'date-fns'
 import { streamText } from 'ai'
+import { createAzure } from '@ai-sdk/azure';
 import { google } from '@ai-sdk/google'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { z } from 'zod'
@@ -34,10 +35,15 @@ import { ListHotels } from '@/components/hotels/list-hotels'
 import { Destinations } from '@/components/flights/destinations'
 import { Video } from '@/components/media/video'
 import { rateLimit } from './ratelimit'
+import OpenAI from 'openai'
 
 const genAI = new GoogleGenerativeAI(
   process.env.GOOGLE_GENERATIVE_AI_API_KEY || ''
 )
+const azure = createAzure({
+  resourceName: process.env.AZURE_RESOURCE_NAME, // Azure resource name
+  apiKey: process.env.AZURE_API_KEY,
+});
 
 async function describeImage(imageBase64: string) {
   'use server'
@@ -80,8 +86,8 @@ async function describeImage(imageBase64: string) {
       `
         } else {
           const imageData = imageBase64.split(',')[1]
-
-          const model = genAI.getGenerativeModel({ model: 'gemini-pro-vision' })
+          //    const model = genAI.getGenerativeModel({ model: 'gemini-pro-vision' })
+          const model = azure('gpt-4o');
           const prompt = 'List the books in this image.'
           const image = {
             inlineData: {
@@ -162,7 +168,8 @@ async function submitUserMessage(content: string) {
     ; (async () => {
       try {
         const result = await streamText({
-          model: google('models/gemini-1.5-flash'),
+          model: azure("gpt-4o"),
+          //  model: google('models/gemini-1.5-flash'),
           temperature: 0,
           tools: {
             showFlights: {
@@ -242,17 +249,25 @@ async function submitUserMessage(content: string) {
                 arrivalAirportCode: z.string(),
                 arrivalTime: z.string()
               })
+            },
+            showTasks: {
+              description:
+                'Show the user his/her tasks',
+              parameters: z.object({})
             }
           },
           system: `\
-      You are a friendly assistant that helps the user with booking flights to destinations that are based on a list of books. You can you give travel recommendations based on the books, and will continue to help the user book a flight to their destination.
-  
-      The date today is ${format(new Date(), 'd LLLL, yyyy')}. 
-      The user's current location is San Francisco, CA, so the departure city will be San Francisco and airport will be San Francisco International Airport (SFO). The user would like to book the flight out on May 12, 2024.
+            You are a friendly assistant that helps with two main themes:
+            
+             1. You help the user with their daily tasks 
+             2. You help with booking flights to destinations that are based on a list of books. You can you give travel recommendations based on the books, and will continue to help the user book a flight to their destination.
+        
+            The date today is ${format(new Date(), 'd LLLL, yyyy')}. 
+            The user's current location is San Francisco, CA, so the departure city will be San Francisco and airport will be San Francisco International Airport (SFO). The user would like to book the flight out on May 12, 2024.
 
-      List United Airlines flights only.
-      
-      Here's the flow: 
+            List United Airlines flights only.
+            
+            Here's the flow: 
         1. List holiday destinations based on a collection of books.
         2. List flights to destination.
         3. Choose a flight.
@@ -260,7 +275,7 @@ async function submitUserMessage(content: string) {
         5. Choose hotel
         6. Purchase booking.
         7. Show boarding pass.
-      `,
+            `,
           messages: [...history]
         })
 
@@ -455,6 +470,31 @@ async function submitUserMessage(content: string) {
               uiStream.update(
                 <BotCard>
                   <FlightStatus summary={args} />
+                </BotCard>
+              )
+            } else if (toolName === 'showTasks') {
+              aiState.update({
+                ...aiState.get(),
+                interactions: [],
+                messages: [
+                  ...aiState.get().messages,
+                  {
+                    id: nanoid(),
+                    role: 'assistant',
+                    content: `Your tasks are:`
+                  }
+                ],
+                display: {
+                  name: 'showTasks',
+                  props: {
+                    summary: args
+                  }
+                }
+              })
+
+              uiStream.update(
+                <BotCard>
+                  <Tasks />
                 </BotCard>
               )
             }

@@ -3,11 +3,11 @@ import { kv } from '@vercel/kv'
 import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
 
-const geminiRatelimit = new Ratelimit({
+const azureRatelimit = new Ratelimit({
   redis: kv,
   limiter: Ratelimit.slidingWindow(60, '1 m'),
   analytics: true,
-  prefix: 'gemini_ratelimit'
+  prefix: 'azure_ratelimit'
 })
 
 function getIP() {
@@ -15,8 +15,26 @@ function getIP() {
 }
 
 export async function rateLimit() {
-  const limit = await geminiRatelimit.limit(getIP())
+  const limit = await azureRatelimit.limit(getIP())
   if (!limit.success) {
     redirect('/waiting-room')
   }
 }
+
+// const geminiRatelimit = new Ratelimit({
+//   redis: kv,
+//   limiter: Ratelimit.slidingWindow(60, '1 m'),
+//   analytics: true,
+//   prefix: 'gemini_ratelimit'
+// })
+
+// function getIP() {
+//   return headers().get('x-real-ip') ?? 'unknown'
+// }
+
+// export async function rateLimit() {
+//   const limit = await geminiRatelimit.limit(getIP())
+//   if (!limit.success) {
+//     redirect('/waiting-room')
+//   }
+// }

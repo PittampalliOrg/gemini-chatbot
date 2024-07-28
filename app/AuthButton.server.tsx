@@ -1,5 +1,5 @@
 import { SessionProvider } from "next-auth/react";
-import { BASE_PATH, auth } from "./auth";
+import { BASE_PATH, auth } from "../auth";
 
 import AuthButtonClient from "./AuthButton.client";
 
@@ -9,6 +9,7 @@ export default async function AuthButton() {
     session.user = {
       name: session.user.name,
       email: session.user.email,
+      address: "", // Add the address property here
     };
   }
 

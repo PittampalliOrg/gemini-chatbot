@@ -1,7 +1,7 @@
 import { type Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
 
-import { auth } from '@/app/auth'
+import { auth } from '@/auth'
 import { getChat, getMissingKeys } from '@/app/actions'
 import { Chat } from '@/components/chat'
 import { AI } from '@/lib/chat/actions'
@@ -17,12 +17,13 @@ export async function generateMetadata({
   params
 }: ChatPageProps): Promise<Metadata> {
   const session = await auth()
+  const userId = session?.user?.id as string
 
   if (!session?.user) {
     return {}
   }
 
-  const chat = await getChat(params.id, session.user.id)
+  const chat = await getChat(params.id, userId)
   return {
     title: chat?.title.toString().slice(0, 50) ?? 'Chat'
   }
