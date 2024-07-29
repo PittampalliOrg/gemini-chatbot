@@ -1,29 +1,11 @@
-import { kv } from '@vercel/kv'
-import type { NextFetchEvent, NextRequest } from 'next/server'
-import { kasadaHandler } from './lib/kasada/kasada-server'
+export { auth as middleware } from "@/auth"
 
-const MAX_REQUESTS = 50
+// Or like this if you need to do something here.
+// export default auth((req) => {
+//   console.log(req.auth) //  { session: { user: { ... } } }
+// })
 
-export async function middleware(req: NextRequest, ev: NextFetchEvent) {
-  if (req.method === 'POST') {
-    const realIp = req.headers.get('x-real-ip') || 'no-ip'
-    const pipeline = kv.pipeline()
-    pipeline.incr(`rate-limit:${realIp}`)
-    pipeline.expire(`rate-limit:${realIp}`, 60 * 60 * 24)
-    const [requests] = (await pipeline.exec()) as [number]
-
-    if (process.env.NODE_ENV === 'development') {
-      return undefined
-    }
-
-    if (requests > MAX_REQUESTS) {
-      return new Response('Too many requests', { status: 429 })
-    }
-
-    return kasadaHandler(req, ev)
-  }
-}
-
+// Read more: https://nextjs.org/docs/app/building-your-application/routing/middleware#matcher
 export const config = {
-  matcher: ['/', '/chat/:id*', '/share/:id*']
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 }
